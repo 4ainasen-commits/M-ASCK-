@@ -2,53 +2,21 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>M-ASCK Ω</title>
+    <title>Ω COMMAND CENTER</title>
     <script src="https://tailwindcss.com"></script>
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
-    <link rel="stylesheet" href="https://unpkg.com" />
-    <script src="https://unpkg.com"></script>
     <style>
-        body { background: #000; color: #fff; font-family: monospace; overflow: hidden; height: 100vh; display: flex; align-items: center; justify-content: center; }
-        #map { position: absolute; inset: 0; z-index: 1; filter: invert(1) hue-rotate(180deg) brightness(0.3); display: none; }
-        .pulsing { color: #f00; font-size: 2.5rem; font-weight: bold; cursor: pointer; animation: pulse 2s infinite; letter-spacing: 5px; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
-        .glass { background: rgba(10,10,10,0.98); border: 1px solid #f00; padding: 40px; border-radius: 40px; width: 90%; max-width: 450px; text-align: center; z-index: 100; box-shadow: 0 0 30px rgba(255,0,0,0.2); }
-        input { background: #050505 !important; border: 1px solid #222 !important; color: #fff !important; text-align: center; }
-        .hidden-admin { position: absolute; top: 0; left: 0; width: 100%; height: 100px; z-index: 200; cursor: pointer; }
-        /* Anti-Capture */
-        @media screen { body { -webkit-user-select: none; -webkit-touch-callout: none; } }
+        body { background: #000; color: #f00; font-family: monospace; padding: 40px; }
+        .card { background: #050505; border: 1px solid #222; border-left: 5px solid #f00; padding: 25px; border-radius: 20px; margin-bottom: 20px; }
+        button { transition: 0.3s; }
+        button:active { transform: scale(0.9); }
     </style>
 </head>
 <body>
-    <div id="map"></div>
-
-    <!-- Hidden Trigger Area for Admin (10 Seconds) -->
-    <div class="hidden-admin" onmousedown="startAdminTimer()" onmouseup="stopAdminTimer()" ontouchstart="startAdminTimer()" ontouchend="stopAdminTimer()"></div>
-
-    <div id="auth-screen" class="glass">
-        <div class="pulsing mb-10">M-ASCK Ω</div>
-        <div class="space-y-6">
-            <input id="client-id" type="text" placeholder="REQUISITION ID" class="w-full p-5 rounded-2xl font-black text-xl uppercase outline-none focus:border-red-600 transition-all">
-            <button onclick="checkAccess()" id="btn-main" class="w-full py-5 bg-red-700 hover:bg-red-600 text-white font-black rounded-2xl shadow-2xl transition-all uppercase tracking-widest text-xs">Lancer Réquisition Ω</button>
-            <div class="pt-6 border-t border-white/5">
-                <button onclick="contactAdmin()" class="text-blue-500 text-[10px] uppercase font-bold tracking-widest hover:text-blue-400">Demander Activation via WhatsApp</button>
-            </div>
-            <div id="ghost-chat" class="text-[9px] text-zinc-600 italic mt-4 h-4 overflow-hidden"></div>
-        </div>
-    </div>
-
-    <!-- Active Interface (Module 1) -->
-    <div id="module-1" class="hidden absolute top-5 left-5 z-[150] w-80 space-y-4">
-        <div class="glass !p-6 !w-full !rounded-3xl border-l-4 border-red-600">
-            <h2 class="text-red-600 font-black text-[10px] uppercase mb-4 tracking-widest">Signal Intelligence</h2>
-            <div id="target-data" class="text-[11px] space-y-2 uppercase">
-                <p>Status: <span class="text-green-500">LOCKED</span></p>
-                <p>Radar: <span class="text-white">Active HD</span></p>
-                <p>Logs: <span class="text-blue-500">Extracting...</span></p>
-            </div>
-        </div>
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-black mb-10 border-b border-red-900 pb-5 uppercase italic tracking-tighter">M-ASCK Ω Command</h1>
+        <div id="list" class="space-y-4 text-xs">Extraction des signaux...</div>
     </div>
 
     <script>
@@ -64,48 +32,28 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // Admin Trigger
-        let timer;
-        function startAdminTimer() { timer = setTimeout(() => { window.location.href = "admin.html"; }, 10000); }
-        function stopAdminTimer() { clearTimeout(timer); }
+        db.ref('users').on('value', (snap) => {
+            const users = snap.val();
+            let html = "";
+            for (let id in users) {
+                const u = users[id];
+                html += `
+                <div class="card flex justify-between items-center shadow-2xl">
+                    <div>
+                        <p class="text-zinc-500 font-bold mb-1">ID CLIENT: <span class="text-white">${u.customID}</span></p>
+                        <p class="uppercase">Status: <span class="${u.status === 'active' ? 'text-green-500' : 'text-red-500'}">${u.status}</span></p>
+                    </div>
+                    <div class="flex gap-4">
+                        <button onclick="update('${id}', 'active')" class="bg-red-700 text-white px-8 py-3 rounded-xl font-bold uppercase">Activate Ω</button>
+                        <button onclick="update('${id}', 'locked')" class="bg-zinc-900 text-zinc-500 px-8 py-3 rounded-xl font-bold uppercase">Kill</button>
+                    </div>
+                </div>`;
+            }
+            document.getElementById('list').innerHTML = html || "Aucune demande en attente.";
+        });
 
-        function contactAdmin() {
-            const id = "ASCK-" + Math.floor(1000 + Math.random() * 9000);
-            window.open(`https://wa.me{id}`);
-        }
-
-        async function checkAccess() {
-            const inputId = document.getElementById('client-id').value;
-            if(!inputId) return;
-            const btn = document.getElementById('btn-main');
-            btn.innerText = "SYNCHRONIZING...";
-
-            db.ref('users').orderByChild('customID').equalTo(inputId).once('value', (snap) => {
-                const data = snap.val();
-                if(data) {
-                    const uid = Object.keys(data)[0];
-                    if(data[uid].status === 'active') {
-                        unlockUI();
-                    } else {
-                        alert("STATION OFFLINE: En attente d'activation Admin.");
-                        btn.innerText = "Lancer Réquisition Ω";
-                    }
-                } else {
-                    db.ref('users').push().set({ customID: inputId, status: 'locked', created_at: Date.now() });
-                    alert("ID Enregistré. Contactez l'Admin pour l'activation.");
-                    btn.innerText = "Lancer Réquisition Ω";
-                }
-            });
-        }
-
-        function unlockUI() {
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('map').style.display = 'block';
-            document.getElementById('module-1').classList.remove('hidden');
-            
-            var m = L.map('map', {zoomControl:false}).setView([-18.8792, 47.5079], 15);
-            L.tileLayer('https://{s}://{x}&y={y}&z={z}',{subdomains:['mt0','mt1','mt2','mt3']}).addTo(m);
-            L.marker([-18.8792, 47.5079]).addTo(m).bindPopup("<b style='color:red'>TARGET_LOCKED</b>").openPopup();
+        function update(uid, stat) {
+            db.ref('users/' + uid).update({ status: stat });
         }
     </script>
 </body>
