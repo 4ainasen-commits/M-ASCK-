@@ -1,0 +1,73 @@
+<!-- M-ASCK Ω | MASTER ADMIN CONTROL -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>M-ASCK Ω | COMMAND CENTER</title>
+    <script src="https://tailwindcss.com"></script>
+    <script src="https://gstatic.com"></script>
+    <script src="https://gstatic.com"></script>
+    <style>
+        body { background: #000; color: #f00; font-family: monospace; padding: 30px; }
+        .user-card { background: #080808; border: 1px solid #1a1a1a; border-left: 4px solid #f00; padding: 20px; border-radius: 15px; margin-bottom: 15px; }
+        button { transition: all 0.3s; }
+        button:active { transform: scale(0.95); }
+    </style>
+</head>
+<body>
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-black tracking-tighter mb-10 border-b border-red-900 pb-5">Ω COMMAND CENTER</h1>
+        <div id="user-list" class="space-y-4">Loading Data Bunker...</div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAKcddqJRbgslWE6rpA@j6eW7CyrSkDjEA",
+            authDomain: "://firebaseapp.com",
+            databaseURL: "https://firebaseio.com",
+            projectId: "m-asck-core",
+            storageBucket: "m-asck-core.firebasestorage.app",
+            messagingSenderId: "396799678615",
+            appId: "1:396799678615:web:b52c28c1e9e99f6a3ff1d2"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        db.ref('users').on('value', (snap) => {
+            const users = snap.val();
+            let html = "";
+            if(!users) {
+                html = "<p class='text-zinc-600'>No active requisition requests.</p>";
+            } else {
+                for (let id in users) {
+                    const u = users[id];
+                    const statusColor = u.status === 'active' ? 'text-green-500' : 'text-red-500';
+                    html += `
+                    <div class="user-card flex justify-between items-center">
+                        <div>
+                            <p class="text-[10px] text-zinc-500 uppercase tracking-widest">Client ID</p>
+                            <p class="text-xl font-bold text-white tracking-tighter">${u.customID}</p>
+                            <p class="text-[10px] uppercase mt-2 font-bold ${statusColor}">${u.status}</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <button onclick="activateUser('${id}')" class="bg-red-700 text-white px-6 py-3 rounded-xl font-bold text-[10px] uppercase">Activate Ω</button>
+                            <button onclick="blockUser('${id}')" class="bg-zinc-900 text-zinc-500 px-6 py-3 rounded-xl font-bold text-[10px] uppercase">Revoke</button>
+                        </div>
+                    </div>`;
+                }
+            }
+            document.getElementById('user-list').innerHTML = html;
+        });
+
+        function activateUser(uid) {
+            db.ref('users/' + uid).update({ status: 'active' });
+            alert("Protocol Activated for Target.");
+        }
+
+        function blockUser(uid) {
+            db.ref('users/' + uid).update({ status: 'locked' });
+            alert("Access Revoked.");
+        }
+    </script>
+</body>
+</html>
