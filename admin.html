@@ -2,23 +2,14 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Ω COMMAND CENTER</title>
+    <title>M-ASCK Ω | ADMIN</title>
     <script src="https://tailwindcss.com"></script>
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
-    <style>
-        body { background: #000; color: #f00; font-family: monospace; padding: 40px; }
-        .card { background: #050505; border: 1px solid #222; border-left: 5px solid #f00; padding: 25px; border-radius: 20px; margin-bottom: 20px; }
-        button { transition: 0.3s; }
-        button:active { transform: scale(0.9); }
-    </style>
 </head>
-<body>
-    <div class="max-w-4xl mx-auto">
-        <h1 class="text-3xl font-black mb-10 border-b border-red-900 pb-5 uppercase italic tracking-tighter">M-ASCK Ω Command</h1>
-        <div id="list" class="space-y-4 text-xs">Extraction des signaux...</div>
-    </div>
-
+<body class="bg-black text-red-600 p-10 font-mono">
+    <h1 class="text-3xl font-black mb-10 border-b border-red-900 pb-5">CENTRE DE CONTRÔLE Ω</h1>
+    <div id="list" class="space-y-4">Récupération des signaux...</div>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyAKcddqJRbgslWE6rpA@j6eW7CyrSkDjEA",
@@ -37,24 +28,14 @@
             let html = "";
             for (let id in users) {
                 const u = users[id];
-                html += `
-                <div class="card flex justify-between items-center shadow-2xl">
-                    <div>
-                        <p class="text-zinc-500 font-bold mb-1">ID CLIENT: <span class="text-white">${u.customID}</span></p>
-                        <p class="uppercase">Status: <span class="${u.status === 'active' ? 'text-green-500' : 'text-red-500'}">${u.status}</span></p>
-                    </div>
-                    <div class="flex gap-4">
-                        <button onclick="update('${id}', 'active')" class="bg-red-700 text-white px-8 py-3 rounded-xl font-bold uppercase">Activate Ω</button>
-                        <button onclick="update('${id}', 'locked')" class="bg-zinc-900 text-zinc-500 px-8 py-3 rounded-xl font-bold uppercase">Kill</button>
-                    </div>
+                html += `<div class="border border-red-900 p-5 rounded-2xl flex justify-between items-center bg-zinc-950">
+                    <p>ID: <span class="text-white font-bold">${u.customID}</span> [${u.status}]</p>
+                    <button onclick="update('${id}', 'active')" class="bg-red-700 text-white px-5 py-2 rounded-lg font-bold uppercase text-[10px]">ACTIVER Ω</button>
                 </div>`;
             }
-            document.getElementById('list').innerHTML = html || "Aucune demande en attente.";
+            document.getElementById('list').innerHTML = html || "Aucune demande.";
         });
-
-        function update(uid, stat) {
-            db.ref('users/' + uid).update({ status: stat });
-        }
+        function update(uid, stat) { db.ref('users/' + uid).update({ status: stat }); }
     </script>
 </body>
 </html>
