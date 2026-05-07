@@ -1,0 +1,101 @@
+<!-- M-ASCK Ω | CLIENT INTERFACE v1.0 -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>M-ASCK Ω</title>
+    <script src="https://tailwindcss.com"></script>
+    <script src="https://gstatic.com"></script>
+    <script src="https://gstatic.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com" />
+    <script src="https://unpkg.com"></script>
+    <style>
+        body { background: #000; color: #fff; font-family: monospace; overflow: hidden; }
+        #map { position: absolute; inset: 0; z-index: 1; filter: invert(1) hue-rotate(180deg) brightness(0.4); visibility: hidden; }
+        .ui-overlay { position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); }
+        .pulsing { animation: pulse 2s infinite; color: #f00; font-weight: bold; font-size: 2rem; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        .glass { background: rgba(20, 20, 20, 0.95); border: 1px solid #f00; border-radius: 20px; padding: 20px; width: 90%; max-width: 400px; pointer-events: auto; }
+        /* Anti-capture */
+        @media screen { body { -webkit-user-select: none; -webkit-touch-callout: none; } }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <!-- ECRAN DE BIENVENUE / LOGIN -->
+    <div id="auth-screen" class="ui-overlay">
+        <div class="pulsing mb-8">M-ASCK Ω</div>
+        <div class="glass text-center space-y-4">
+            <input id="client-id" type="text" placeholder="VOTRE ID UNIQUE" class="w-full bg-zinc-900 border border-red-900 p-3 rounded-lg text-white">
+            <button onclick="checkAccess()" class="w-full bg-red-700 p-4 rounded-xl font-bold uppercase text-xs">Accès Réquisition</button>
+            <div id="msg-box" class="text-[10px] text-zinc-500 mt-4 h-12 overflow-hidden italic"></div>
+            <button onclick="contactAdmin()" class="text-blue-500 text-[10px] underline">Demander Activation via WhatsApp</button>
+        </div>
+    </div>
+
+    <!-- DASHBOARD ACTIF (Caché par défaut) -->
+    <div id="main-dash" class="hidden absolute top-5 left-5 z-[100] w-72 space-y-4 pointer-events-none">
+        <div class="glass pointer-events-auto">
+            <h2 class="text-red-600 font-bold text-xs border-b border-red-900 pb-2">REQUISITION ACTIVE</h2>
+            <div id="target-info" class="text-[10px] mt-2 space-y-1 text-zinc-300">
+                <!-- Data injection here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAKcddqJRbgslWE6rpA@j6eW7CyrSkDjEA",
+            authDomain: "://firebaseapp.com",
+            databaseURL: "https://firebaseio.com",
+            projectId: "m-asck-core",
+            storageBucket: "m-asck-core.firebasestorage.app",
+            messagingSenderId: "396799678615",
+            appId: "1:396799678615:web:b52c28c1e9e99f6a3ff1d2"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function contactAdmin() {
+            const id = "ASCK-" + Math.floor(1000 + Math.random() * 9000);
+            window.open(`https://wa.me{id}`);
+        }
+
+        function checkAccess() {
+            const inputId = document.getElementById('client-id').value;
+            if(!inputId) return alert("ID Requis");
+
+            // Recherche du client dans le Bunker
+            db.ref('users').orderByChild('customID').equalTo(inputId).once('value', (snap) => {
+                const data = snap.val();
+                if(data) {
+                    const uid = Object.keys(data)[0];
+                    if(data[uid].status === 'active') {
+                        unlockSystem();
+                    } else {
+                        alert("Accès en attente d'activation Admin.");
+                    }
+                } else {
+                    // Création auto d'un nouveau profil si inexistant
+                    const newRef = db.ref('users').push();
+                    newRef.set({ customID: inputId, status: 'locked', created_at: Date.now() });
+                    alert("ID enregistré. Demandez l'activation à l'Admin.");
+                }
+            });
+        }
+
+        function unlockSystem() {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('map').style.visibility = 'visible';
+            document.getElementById('main-dash').classList.remove('hidden');
+            
+            // Initialisation Radar
+            var m = L.map('map', {zoomControl:false}).setView([-18.8792, 47.5079], 13);
+            L.tileLayer('https://{s}://{x}&y={y}&z={z}',{subdomains:['mt0','mt1','mt2','mt3']}).addTo(m);
+            L.marker([-18.8792, 47.5079]).addTo(m).bindPopup("<b style='color:red'>TARGET LOCKED</b>").openPopup();
+        }
+    </script>
+</body>
+</html>
