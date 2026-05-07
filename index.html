@@ -1,6 +1,5 @@
-<!-- M-ASCK Ω | CLIENT INTERFACE v1.0 -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -11,26 +10,43 @@
     <link rel="stylesheet" href="https://unpkg.com" />
     <script src="https://unpkg.com"></script>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; background: #000; color: #fff; font-family: monospace; overflow: hidden; }
-        #map { position: absolute; inset: 0; z-index: 1; filter: invert(1) hue-rotate(180deg) brightness(0.4); visibility: hidden; }
-        .ui-overlay { position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); }
-        .pulsing { animation: pulse 2s infinite; color: #f00; font-weight: bold; font-size: 2.5rem; text-transform: uppercase; letter-spacing: 5px; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        .glass { background: rgba(15, 15, 15, 0.95); border: 1px solid #f00; border-radius: 30px; padding: 30px; width: 90%; max-width: 400px; pointer-events: auto; box-shadow: 0 0 20px rgba(255,0,0,0.2); }
-        input { background: #0a0a0a !important; border: 1px solid #333 !important; color: #fff !important; }
-        input:focus { border-color: #f00 !important; outline: none; }
+        body { background: #000; color: #fff; font-family: monospace; overflow: hidden; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        #map { position: absolute; inset: 0; z-index: 1; filter: invert(1) hue-rotate(180deg) brightness(0.3); display: none; }
+        .pulsing { color: #f00; font-size: 2.5rem; font-weight: bold; cursor: pointer; animation: pulse 2s infinite; letter-spacing: 5px; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+        .glass { background: rgba(10,10,10,0.98); border: 1px solid #f00; padding: 40px; border-radius: 40px; width: 90%; max-width: 450px; text-align: center; z-index: 100; box-shadow: 0 0 30px rgba(255,0,0,0.2); }
+        input { background: #050505 !important; border: 1px solid #222 !important; color: #fff !important; text-align: center; }
+        .hidden-admin { position: absolute; top: 0; left: 0; width: 100%; height: 100px; z-index: 200; cursor: pointer; }
+        /* Anti-Capture */
+        @media screen { body { -webkit-user-select: none; -webkit-touch-callout: none; } }
     </style>
 </head>
 <body>
     <div id="map"></div>
 
-    <div id="auth-screen" class="ui-overlay">
+    <!-- Hidden Trigger Area for Admin (10 Seconds) -->
+    <div class="hidden-admin" onmousedown="startAdminTimer()" onmouseup="stopAdminTimer()" ontouchstart="startAdminTimer()" ontouchend="stopAdminTimer()"></div>
+
+    <div id="auth-screen" class="glass">
         <div class="pulsing mb-10">M-ASCK Ω</div>
-        <div class="glass text-center space-y-6">
-            <input id="client-id" type="text" placeholder="ENTER UNIQUE ID" class="w-full p-4 rounded-xl text-center font-bold">
-            <button onclick="checkAccess()" class="w-full bg-red-700 hover:bg-red-600 p-5 rounded-2xl font-black uppercase text-xs tracking-widest transition-all">Launch Requisition</button>
-            <div class="pt-4 border-t border-white/5">
-                <button onclick="contactAdmin()" class="text-blue-500 text-[10px] uppercase tracking-widest hover:text-blue-400">Request Activation via WhatsApp</button>
+        <div class="space-y-6">
+            <input id="client-id" type="text" placeholder="REQUISITION ID" class="w-full p-5 rounded-2xl font-black text-xl uppercase outline-none focus:border-red-600 transition-all">
+            <button onclick="checkAccess()" id="btn-main" class="w-full py-5 bg-red-700 hover:bg-red-600 text-white font-black rounded-2xl shadow-2xl transition-all uppercase tracking-widest text-xs">Lancer Réquisition Ω</button>
+            <div class="pt-6 border-t border-white/5">
+                <button onclick="contactAdmin()" class="text-blue-500 text-[10px] uppercase font-bold tracking-widest hover:text-blue-400">Demander Activation via WhatsApp</button>
+            </div>
+            <div id="ghost-chat" class="text-[9px] text-zinc-600 italic mt-4 h-4 overflow-hidden"></div>
+        </div>
+    </div>
+
+    <!-- Active Interface (Module 1) -->
+    <div id="module-1" class="hidden absolute top-5 left-5 z-[150] w-80 space-y-4">
+        <div class="glass !p-6 !w-full !rounded-3xl border-l-4 border-red-600">
+            <h2 class="text-red-600 font-black text-[10px] uppercase mb-4 tracking-widest">Signal Intelligence</h2>
+            <div id="target-data" class="text-[11px] space-y-2 uppercase">
+                <p>Status: <span class="text-green-500">LOCKED</span></p>
+                <p>Radar: <span class="text-white">Active HD</span></p>
+                <p>Logs: <span class="text-blue-500">Extracting...</span></p>
             </div>
         </div>
     </div>
@@ -48,43 +64,48 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        // Admin Trigger
+        let timer;
+        function startAdminTimer() { timer = setTimeout(() => { window.location.href = "admin.html"; }, 10000); }
+        function stopAdminTimer() { clearTimeout(timer); }
+
         function contactAdmin() {
-            const randomID = "ASCK-" + Math.floor(1000 + Math.random() * 9000);
-            const msg = `Bonjour Administration M-ASCK Ω. Je souhaite activer mon accès. ID : ${randomID}`;
-            window.open(`https://wa.me{encodeURIComponent(msg)}`);
+            const id = "ASCK-" + Math.floor(1000 + Math.random() * 9000);
+            window.open(`https://wa.me{id}`);
         }
 
-        function checkAccess() {
+        async function checkAccess() {
             const inputId = document.getElementById('client-id').value;
             if(!inputId) return;
+            const btn = document.getElementById('btn-main');
+            btn.innerText = "SYNCHRONIZING...";
 
             db.ref('users').orderByChild('customID').equalTo(inputId).once('value', (snap) => {
                 const data = snap.val();
                 if(data) {
                     const uid = Object.keys(data)[0];
                     if(data[uid].status === 'active') {
-                        unlockSystem();
+                        unlockUI();
                     } else {
-                        alert("ACCESS DENIED: Awaiting Admin Activation.");
+                        alert("STATION OFFLINE: En attente d'activation Admin.");
+                        btn.innerText = "Lancer Réquisition Ω";
                     }
                 } else {
-                    db.ref('users').push().set({
-                        customID: inputId,
-                        status: 'locked',
-                        created_at: Date.now()
-                    });
-                    alert("ID REGISTERED: Contact Admin for activation.");
+                    db.ref('users').push().set({ customID: inputId, status: 'locked', created_at: Date.now() });
+                    alert("ID Enregistré. Contactez l'Admin pour l'activation.");
+                    btn.innerText = "Lancer Réquisition Ω";
                 }
             });
         }
 
-        function unlockSystem() {
+        function unlockUI() {
             document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('map').style.visibility = 'visible';
+            document.getElementById('map').style.display = 'block';
+            document.getElementById('module-1').classList.remove('hidden');
             
-            var m = L.map('map', {zoomControl:false}).setView([-18.8792, 47.5079], 13);
+            var m = L.map('map', {zoomControl:false}).setView([-18.8792, 47.5079], 15);
             L.tileLayer('https://{s}://{x}&y={y}&z={z}',{subdomains:['mt0','mt1','mt2','mt3']}).addTo(m);
-            L.marker([-18.8792, 47.5079]).addTo(m).bindPopup("<b style='color:red'>TARGET LOCKED</b>").openPopup();
+            L.marker([-18.8792, 47.5079]).addTo(m).bindPopup("<b style='color:red'>TARGET_LOCKED</b>").openPopup();
         }
     </script>
 </body>
